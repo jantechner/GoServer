@@ -1,6 +1,7 @@
 package homepage
 
 import (
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"time"
@@ -35,8 +36,8 @@ func (h *Handlers) Logger(next http.HandlerFunc) http.HandlerFunc  {
 	}
 }
 
-func (h *Handlers) SetupRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/", h.Logger(h.Counter(h.Home)))
+func (h *Handlers) SetupRoutes(router *mux.Router) {
+	router.HandleFunc("/", h.Logger(h.Counter(h.Home)))
 }
 
 func NewHandlers(logger *log.Logger, notifier chan<- int) *Handlers {

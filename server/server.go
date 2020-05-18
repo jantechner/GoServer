@@ -1,11 +1,12 @@
 package server
 
 import (
+	"github.com/gorilla/mux"
 	"net/http"
 	"time"
 )
 
-func New(mux *http.ServeMux, addr string) *http.Server {
+func New(mux *mux.Router, addr string) *http.Server {
 	srv := &http.Server{
 		Addr:         addr,
 		Handler:      mux,

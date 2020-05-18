@@ -3,8 +3,10 @@ package main
 import (
 	"./homepage"
 	"./server"
+	"./todo"
 	"context"
 	"fmt"
+	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"os"
@@ -15,7 +17,7 @@ import (
 )
 
 var (
-	Addr          = os.Getenv("SERVICE_ADDR")
+	Addr             = os.Getenv("SERVICE_ADDR")
 	RequestsLimit, _ = strconv.Atoi(os.Getenv("REQUESTS_LIMIT"))
 )
 
@@ -60,9 +62,10 @@ func main() {
 	go requestsCounter(cancel, logger, requestCounterChan)
 
 	h := homepage.NewHandlers(logger, requestCounterChan)
-	mux := http.NewServeMux()
-	h.SetupRoutes(mux)
-	srv := server.New(mux, Addr)
+	router := mux.Router{}
+	h.SetupRoutes(&router)
+	todo.SetupRoutes(&router)
+	srv := server.New(&router, Addr)
 
 	go handleShutdown(ctx, srv, wg)
 
