@@ -61,10 +61,14 @@ func main() {
 
 	go requestsCounter(cancel, logger, requestCounterChan)
 
-	h := homepage.NewHandlers(logger, requestCounterChan)
 	router := mux.Router{}
-	h.SetupRoutes(&router)
-	todo.SetupRoutes(&router)
+
+	homepageHandlers := homepage.NewHandlers(logger, requestCounterChan)
+	homepageHandlers.SetupRoutes(&router)
+
+	todosHandlers := todo.NewHandlers(logger)
+	todosHandlers.SetupRoutes(&router)
+
 	srv := server.New(&router, Addr)
 
 	go handleShutdown(ctx, srv, wg)
