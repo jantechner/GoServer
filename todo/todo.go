@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -39,9 +40,29 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(response)
 }
 
+func PostTodo(w http.ResponseWriter, r *http.Request) {
+	var todo Todo
+	err := json.NewDecoder(r.Body).Decode(&todo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	todo.Number, err = generateNewId()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = todo.save()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+}
+
 func (todo *Todo) save() error {
-	filename := fmt.Sprintf("%v.txt", todo.Number)
-	return ioutil.WriteFile(filename, []byte(todo.Content), 600)
+	filename := fmt.Sprintf("./todo/todos/%v.txt", todo.Number)
+	return ioutil.WriteFile(filename, []byte(todo.Content), os.FileMode(0644))
 }
 
 func load(idStr string) (*Todo, error) {
@@ -74,8 +95,29 @@ func loadAll() (todos []Todo, err error) {
 	return
 }
 
+func generateNewId() (int, error) {
+	files, err := ioutil.ReadDir("./todo/todos")
+	if err != nil {
+		return 0, err
+	}
+	var max int
+	for _, file := range files {
+		filename := file.Name()
+		numberStr := filename[:len(filename)-len(".txt")]
+		num, err := strconv.Atoi(numberStr)
+		if err != nil {
+			return 0, err
+		}
+		if num > max {
+			max = num
+		}
+	}
+	return max + 1, nil
+}
+
 func SetupRoutes(mux *mux.Router) {
 	s := mux.PathPrefix("/todos").Subrouter()
-	s.HandleFunc("", GetTodos)
+	s.HandleFunc("", GetTodos).Methods("GET")
 	s.HandleFunc("/{id:[0-9]+}", GetTodos)
+	s.HandleFunc("", PostTodo).Methods("POST")
 }
